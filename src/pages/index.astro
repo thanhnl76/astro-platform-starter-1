@@ -1,21 +1,536 @@
----
-import Layout from '../layouts/Layout.astro';
-import ContextAlert from '../components/ContextAlert.astro';
-import Markdown from '../components/Markdown.astro';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nhập thông tin & tự động tính phí (R21/R22/R23)</title>
+  <style>
+    :root { 
+      --gap: 12px; 
+      --radius: 12px; 
+      --shadow: 0 6px 18px rgba(0,0,0,.08);
+      --main-bg: #f6f7fb;
+      --card-bg: #fff;
+      --text-color: #1f2937;
+      --label-color: #374151;
+      --input-border: #e5e7eb;
+      --primary-btn-bg: #2563eb;
+      --secondary-btn-bg: #111827;
+    }
+    * { 
+      box-sizing: border-box; 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    body { 
+      margin: 0; 
+      background: var(--main-bg); 
+      color: var(--text-color); 
+      padding: 0 16px; 
+    }
+    .wrap {
+      max-width: 1080px;
+      margin: 16px auto;
+    }
+    header { 
+      padding: 0px; 
+      background: var(--card-bg); 
+      box-shadow: var(--shadow); 
+      position: sticky; 
+      top: 0; 
+      z-index: 5; 
+      margin: 0 -16px;
+    }
+    .card { 
+      background: var(--card-bg); 
+      border-radius: var(--radius); 
+      box-shadow: var(--shadow); 
+      padding: 18px; 
+      margin-bottom: 20px;
+    }
+    .grid { 
+      display: grid; 
+      gap: var(--gap); 
+    }
+    .g-2 { grid-template-columns: repeat(2, 1fr); }
+    .g-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 600px) {
+      .g-3, .g-2 { grid-template-columns: 1fr; }
+    }
+    label { 
+      font-size: 13px; 
+      color: var(--label-color); 
+      display: block; 
+      margin-bottom: 6px; 
+    }
+    input, select { 
+      width: 100%; 
+      padding: 12px; 
+      border: 1px solid var(--input-border); 
+      border-radius: 10px; 
+      background: var(--card-bg); 
+      font-size: 16px; 
+    }
+    input[type="number"] { text-align: right; }
+    .muted { 
+      color: #6b7280; 
+      font-size: 13px; 
+    }
+    .row { 
+      display: flex; 
+      gap: var(--gap); 
+      align-items: center; 
+      justify-content: space-between; 
+    }
+    .btn { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px; 
+      background: var(--primary-btn-bg); 
+      color: white; 
+      border: 0; 
+      padding: 12px 16px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      box-shadow: 0 4px 12px rgba(37,99,235,.3); 
+      font-size: 16px;
+      justify-content: center;
+    }
+    .btn.secondary { background: var(--secondary-btn-bg); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      border-radius: 10px; 
+      overflow: hidden; 
+      font-size: 14px;
+    }
+    th, td { 
+      padding: 12px; 
+      border-bottom: 1px solid #eef2f7; 
+      text-align: right; 
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { 
+      text-align: left; 
+    }
+    thead th { 
+      background: #eef2f7; 
+      font-weight: 600; 
+    }
+    tfoot td { 
+      font-weight: 700; 
+    }
+    .pill { 
+      padding: 6px 10px; 
+      background: #eef2ff; 
+      color: #4338ca; 
+      border-radius: 999px; 
+      font-size: 12px; 
+    }
+    .right { 
+      text-align: right; 
+    }
+    .warn { 
+      background: #fff7ed; 
+      border: 1px dashed #fdba74; 
+      color: #9a3412; 
+      padding: 12px; 
+      border-radius: 10px; 
+      font-size: 14px;
+    }
+    .ok { 
+      background: #ecfdf5; 
+      border: 1px dashed #6ee7b7; 
+      color: #065f46; 
+      padding: 12px; 
+      border-radius: 10px; 
+      font-size: 14px;
+    }
+    .section-title { 
+      margin: 0 0 10px; 
+      font-size: 18px; 
+      flex-grow: 1;
+    }
+    .subtle { 
+      font-weight: 500; 
+      color: #111827; 
+    }
+    .flex-row {
+      display: flex;
+      gap: var(--gap);
+    }
+    .flex-row > * {
+      flex: 1;
+    }
+    .full-width {
+      width: 100%;
+    }
+    .small-input {
+      width: 50%;
+    }
+    @media (max-width: 600px) {
+      .flex-row {
+        flex-direction: column;
+      }
+      .flex-row > .small-input {
+        width: 100%;
+      }
+      th, td {
+        padding: 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap row">
+      <h1 style="margin:0;font-size:20px">Nhập thông tin đầu vào & tự động tính phí</h1>
+      <span class="pill">R21 • R22 • R23</span>
+    </div>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+      integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </header>
 
-const explainer = `
-An Astro website can go way beyond static pages - on the right platform.
+  <main class="wrap" id="invoice">
+    <section class="card grid" style="gap:16px">
+      <div class="row">
+        <h2 class="section-title">Thông tin hợp đồng</h2>
+        <button class="btn" id="btnPrint" type="button">Kết xuất PDF</button>
+      </div>
+      <div class="grid g-3">
+        <div>
+          <label>Họ và tên</label>
+          <input id="txtHoTen" placeholder="Nguyễn Văn A" value="Nguyễn Văn Thanh"/>
+        </div>
+        <div>
+          <label>Giới tính</label>
+          <select id="cboGioiTinh">
+            <option selected>Nam</option>
+            <option>Nữ</option>
+          </select>
+        </div>
+        <div>
+          <label>Ngày sinh</label>
+          <input id="txtNgaySinh" type="date" value="1977-04-24"/>
+        </div>
+      </div>
 
-Netlify supports not only [Streaming SSR](https://docs.astro.build/en/guides/server-side-rendering/#html-streaming) and fast [Edge Middleware](https://docs.astro.build/en/guides/middleware/), but also [on-demand revalidation](https://www.netlify.com/blog/cache-tags-and-purge-api-on-netlify/) and [stale-while-revalidate](https://www.netlify.com/blog/swr-and-fine-grained-cache-control/). 
-Any page or data can be rebuilt only when needed, without site visitors ever getting a performance hit.
-`;
----
+      <div class="grid g-3">
+        <div>
+          <label>Nhóm nghề</label>
+          <select id="cboNhomNghe">
+            <option selected>Nhóm 1</option>
+            <option>Nhóm 2</option>
+            <option>Nhóm 3</option>
+            <option>Nhóm 4</option>
+            <option>Nhóm 5</option>
+          </select>
+        </div>
+        <div>
+          <label>Ngày bắt đầu BH</label>
+          <input id="txtNgayBH" type="date" />
+        </div>
+        <div>
+          <label>Thời hạn BH (năm)</label>
+          <input id="txtThoihanBH" type="number" min="5" step="1" value="5" />
+        </div>
+      </div>
 
-<Layout title="Welcome to Astro.">
-    <ContextAlert class="mb-8" />
-    <h1 class="mb-10">Netlify Platform Starter for Astro</h1>
-    <Markdown content={explainer} class="mb-10 text-lg" />
-    <p>
-        <a href="https://docs.netlify.com/frameworks/astro/" class="btn btn-lg sm:min-w-64">Read the Docs</a>
-    </p>
-</Layout>
+      <div class="grid g-3">
+        <div>
+          <label>STBH Sản phẩm chính (STBH SPC/Triệu đồng)</label>
+          <input id="txtSTBHSPC" type="number" min="100" max="25000" step="1" placeholder="vd. 100" value="100" />
+        </div>
+        <div>
+          <label>Phụ trội R21 (nhập % hoặc số thập phân)</label>
+          <input id="txtPhutroiR21" type="number" min="0" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Tuổi tại ngày bắt đầu (tự tính)</label>
+          <input id="txtTuoiBatDau" type="number" min="0" step="1" value="0" disabled />
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid" style="gap:16px">
+      <h2 class="section-title">Số tiền bảo hiểm theo quyền lợi (Riders) tính theo đơn vị Triệu đồng(tr)</h2>
+      <div class="grid g-3">
+        <div>
+          <label style="color:red">STBH R21(100tr - 5000tr)</label>
+          <input id="txtSTBHR21" type="number" min="100" max="5000" step="1" value="100" />
+        </div>
+        <div>
+          <label style="color:red">STBH R22(100tr - 500tr)</label>
+          <input id="txtSTBHR22" type="number" min="100" max="500" step="1" value="100" />
+        </div>
+        <div>
+          <label style="color:red">STBH R23(100tr - 5000tr)</label>
+          <input id="txtSTBHR23" type="number" min="100" max="5000" step="1" value="100" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid" style="gap:16px" >
+      <div class="row">
+        <h2 class="section-title" style="margin-bottom:0">Bảng phí theo năm</h2>
+        <div class="row" style="gap:8px">
+          <button class="btn full-width" id="btnCalc" type="button">Tính phí</button>
+          <button class="btn secondary full-width" id="btnReset" type="button">Làm mới</button>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="tblFees">
+          <thead>
+            <tr>
+              <th>Năm</th>
+              <th>Tuổi</th>
+              <th>R21</th>
+              <th>R22</th>
+              <th>R23</th>
+              <th>Tổng phí</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td class="right" colspan="2">Tổng phí</td>
+              <td id="sumR21">0</td>
+              <td id="sumR22">0</td>
+              <td id="sumR23">0</td>
+              <td id="sumAll">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div id="status" class="ok" style="display:none"></div>
+    </section>
+  </main>
+
+  <script>
+    const formatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'short' });
+    const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n);
+    const num = (v) => { const n = Number(String(v).replace(/[,\\s]/g, '')); return isFinite(n) ? n : 0; };
+    const csvToRows = (text) => text.trim().split(/\r?\n/).map(r => r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
+
+    const Tables = { 
+      R21: [{"Age": 0, "Nam": 0.53, "Nu": 0.532}, {"Age": 1, "Nam": 0.48, "Nu": 0.48}, {"Age": 2, "Nam": 0.432, "Nu": 0.432}, {"Age": 3, "Nam": 0.39, "Nu": 0.387}, {"Age": 4, "Nam": 0.355, "Nu": 0.347}, {"Age": 5, "Nam": 0.32, "Nu": 0.317}, {"Age": 6, "Nam": 0.297, "Nu": 0.285}, {"Age": 7, "Nam": 0.282, "Nu": 0.277}, {"Age": 8, "Nam": 0.285, "Nu": 0.28}, {"Age": 9, "Nam": 0.29, "Nu": 0.285}, {"Age": 10, "Nam": 0.292, "Nu": 0.287}, {"Age": 11, "Nam": 0.302, "Nu": 0.292}, {"Age": 12, "Nam": 0.322, "Nu": 0.302}, {"Age": 13, "Nam": 0.36, "Nu": 0.31}, {"Age": 14, "Nam": 0.377, "Nu": 0.322}, {"Age": 15, "Nam": 0.4, "Nu": 0.337}, {"Age": 16, "Nam": 0.445, "Nu": 0.357}, {"Age": 17, "Nam": 0.482, "Nu": 0.382}, {"Age": 18, "Nam": 0.512, "Nu": 0.417}, {"Age": 19, "Nam": 0.542, "Nu": 0.465}, {"Age": 20, "Nam": 0.57, "Nu": 0.522}, {"Age": 21, "Nam": 0.602, "Nu": 0.585}, {"Age": 22, "Nam": 0.652, "Nu": 0.605}, {"Age": 23, "Nam": 0.725, "Nu": 0.665}, {"Age": 24, "Nam": 0.8, "Nu": 0.735}, {"Age": 25, "Nam": 0.89, "Nu": 0.81}, {"Age": 26, "Nam": 0.985, "Nu": 0.895}, {"Age": 27, "Nam": 1.085, "Nu": 0.992}, {"Age": 28, "Nam": 1.192, "Nu": 1.115}, {"Age": 29, "Nam": 1.302, "Nu": 1.25}, {"Age": 30, "Nam": 1.427, "Nu": 1.407}, {"Age": 31, "Nam": 1.562, "Nu": 1.585}, {"Age": 32, "Nam": 1.745, "Nu": 1.762}, {"Age": 33, "Nam": 1.992, "Nu": 1.937}, {"Age": 34, "Nam": 2.272, "Nu": 2.125}, {"Age": 35, "Nam": 2.587, "Nu": 2.337}, {"Age": 36, "Nam": 2.909, "Nu": 2.567}, {"Age": 37, "Nam": 3.083, "Nu": 2.85}, {"Age": 38, "Nam": 3.216, "Nu": 3.161}, {"Age": 39, "Nam": 3.687, "Nu": 3.47}, {"Age": 40, "Nam": 4.222, "Nu": 3.907}, {"Age": 41, "Nam": 4.77, "Nu": 4.367}, {"Age": 42, "Nam": 5.293, "Nu": 4.743}, {"Age": 43, "Nam": 5.876, "Nu": 5.105}, {"Age": 44, "Nam": 6.545, "Nu": 5.49}, {"Age": 45, "Nam": 7.315, "Nu": 5.893}, {"Age": 46, "Nam": 8.18, "Nu": 6.306}, {"Age": 47, "Nam": 9.128, "Nu": 6.731}, {"Age": 48, "Nam": 10.107, "Nu": 7.171}, {"Age": 49, "Nam": 11.043, "Nu": 7.633}, {"Age": 50, "Nam": 11.903, "Nu": 8.104}, {"Age": 51, "Nam": 13.106, "Nu": 8.57}, {"Age": 52, "Nam": 14.099, "Nu": 9.017}, {"Age": 53, "Nam": 14.817, "Nu": 9.442}, {"Age": 54, "Nam": 15.596, "Nu": 9.922}, {"Age": 55, "Nam": 16.417, "Nu": 10.403}, {"Age": 56, "Nam": 17.257, "Nu": 10.87}, {"Age": 57, "Nam": 18.488, "Nu": 11.335}, {"Age": 58, "Nam": 20.201, "Nu": 11.747}, {"Age": 59, "Nam": 22.113, "Nu": 12.329}, {"Age": 60, "Nam": 24.216, "Nu": 12.868}, {"Age": 61, "Nam": 26.487, "Nu": 13.387}, {"Age": 62, "Nam": 28.623, "Nu": 13.898}, {"Age": 63, "Nam": 30.5, "Nu": 14.412}, {"Age": 64, "Nam": 32.426, "Nu": 14.948}, {"Age": 65, "Nam": 34.426, "Nu": 15.456}, {"Age": 66, "Nam": 36.477, "Nu": 15.844}, {"Age": 67, "Nam": 39.087, "Nu": 16.242}, {"Age": 68, "Nam": 42.032, "Nu": 16.65}, {"Age": 69, "Nam": 44.519, "Nu": 17.068}, {"Age": 70, "Nam": 48.433, "Nu": 18.488}, {"Age": 71, "Nam": 52.956, "Nu": 20.39}, {"Age": 72, "Nam": 56.663, "Nu": 22.57}, {"Age": 73, "Nam": 60.629, "Nu": 24.15}, {"Age": 74, "Nam": 64.873, "Nu": 25.84}], 
+      R22Age: {"0": 1.0, "1": 1.0, "2": 1.0, "3": 1.0, "4": 1.0, "5": 1.0, "6": 1.0, "7": 1.0, "8": 1.0, "9": 1.0, "10": 1.0, "11": 1.0, "12": 1.0, "13": 1.0, "14": 1.0, "15": 1.0, "16": 1.0, "17": 1.0, "18": 1.0, "19": 1.0, "20": 1.0, "21": 1.0, "22": 1.0, "23": 1.0, "24": 1.0, "25": 1.0, "26": 1.0, "27": 1.0, "28": 1.0, "29": 1.0, "30": 1.0, "31": 1.0, "32": 1.0, "33": 1.0, "34": 1.0, "35": 1.0, "36": 1.0, "37": 1.0, "38": 1.0, "39": 1.0, "40": 1.0, "41": 1.0, "42": 1.0, "43": 1.0, "44": 1.0, "45": 1.0, "46": 1.0, "47": 1.0, "48": 1.0, "49": 1.0, "50": 1.0, "51": 1.0, "52": 1.0, "53": 1.0, "54": 1.0, "55": 1.0, "56": 1.0, "57": 1.0, "58": 1.0, "59": 1.0, "60": 1.0, "61": 1.0, "62": 1.0, "63": 1.0, "64": 1.0, "65": 1.0, "66": 1.0, "67": 1.0, "68": 1.0, "69": 1.0},
+      R22Group: {"Nhóm 1": 1.0, "Nhóm 2": 1.3, "Nhóm 3": 1.9, "Nhóm 4": 2.5}, 
+      R23Age: {"0": 0.108, "1": 0.216, "2": 0.324, "3": 0.432, "4": 0.54, "5": 0.54, "6": 0.54, "7": 0.54, "8": 0.54, "9": 0.54, "10": 0.54, "11": 0.54, "12": 0.54, "13": 0.54, "14": 0.54, "15": 0.54, "16": 0.54, "17": 0.54, "18": 0.882, "19": 0.882, "20": 0.882, "21": 0.882, "22": 0.882, "23": 0.882, "24": 0.882, "25": 0.882, "26": 0.882, "27": 0.882, "28": 0.882, "29": 0.882, "30": 0.687, "31": 0.687, "32": 0.687, "33": 0.687, "34": 0.687, "35": 0.687, "36": 0.687, "37": 0.687, "38": 0.687, "39": 0.687, "40": 0.838, "41": 0.838, "42": 0.838, "43": 0.838, "44": 0.838, "45": 0.838, "46": 0.838, "47": 0.838, "48": 0.838, "49": 0.838, "50": 1.124, "51": 1.124, "52": 1.124, "53": 1.124, "54": 1.124, "55": 1.124, "56": 1.124, "57": 1.124, "58": 1.124, "59": 1.124, "60": 1.098, "61": 1.098, "62": 1.098, "63": 1.098, "64": 1.098, "65": 1.098, "66": 1.098, "67": 1.098, "68": 1.098, "69": 1.098}, 
+      R23Group: {"Nhóm 1": 1.0, "Nhóm 2": 1.3, "Nhóm 3": 1.9, "Nhóm 4": 2.5, "Nhóm 5": 3.5} 
+    };
+    
+    const el = (id) => document.getElementById(id);
+	
+    function calcAgeAtStart(dobStr, startStr) {
+      if (!dobStr || !startStr) return 0;
+      const [dobYear, dobMonth, dobDay] = dobStr.split('-').map(Number);
+      const [startYear, startMonth, startDay] = startStr.split('-').map(Number);
+      const dob = new Date(dobYear, dobMonth - 1, dobDay);
+      const start = new Date(startYear, startMonth - 1, startDay);
+      
+      if (dob > start) {
+        return -1; // Indicate an invalid date
+      }
+
+      let age = start.getFullYear() - dob.getFullYear();
+      const m = start.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && start.getDate() < dob.getDate())) age--;
+      return Math.max(0, age);
+    }
+
+    const inputs = {
+      thbh: () => Math.max(1, parseInt(el('txtThoihanBH').value || '1', 10)),
+      spcSA: () => num(el('txtSTBHSPC').value),
+      r21SA: () => num(el('txtSTBHR21').value) * 1000000,
+      r22SA: () => num(el('txtSTBHR22').value) * 1000000,
+      r23SA: () => num(el('txtSTBHR23').value) * 1000000,
+      phuR21: () => { const v = num(el('txtPhutroiR21').value); return v >= 1 ? v / 100 : v; },
+      gender: () => el('cboGioiTinh').value,
+      group:  () => el('cboNhomNghe').value,
+      ngaySinh: () => el('txtNgaySinh').value,
+      ngayBH:   () => el('txtNgayBH').value,
+    };
+    
+    const r21Rate = (age, gender) => {
+      if (!Tables.R21.length) return 0;
+      const row = Tables.R21.find(r => Number(r.Age) === Number(age));
+      if (!row) return 0;
+      const key = (gender || '').toLowerCase().includes('nữ') ? 'Nu' : 'Nam';
+      return num(row[key]);
+    };
+    const r22AgeRate     = (age) => Tables.R22Age[age] != null ? Number(Tables.R22Age[age]) : 0;
+    const r22GroupFactor = (g) => Tables.R22Group[g || ''] != null ? Number(Tables.R22Group[g || '']) : 1;
+    const r23AgeRate     = (age) => Tables.R23Age[age] != null ? Number(Tables.R23Age[age]) : 0;
+    const r23GroupFactor = (g) => Tables.R23Group[g || ''] != null ? Number(Tables.R23Group[g || '']) : 1;
+
+    function buildTable() {
+      const ngaySinh = inputs.ngaySinh();
+      const ngayBH = inputs.ngayBH();
+
+      if (ngaySinh && ngayBH) {
+        const dob = new Date(ngaySinh);
+        const start = new Date(ngayBH);
+        if (dob > start) {
+          alert('Ngày sinh không được sau ngày bắt đầu bảo hiểm.');
+          el('tblFees tbody').innerHTML = '';
+          el('txtTuoiBatDau').value = '';
+          return;
+        }
+      }
+
+      const ageStart = calcAgeAtStart(ngaySinh, ngayBH);
+      const ageBox = el('txtTuoiBatDau'); if (ageBox) ageBox.value = ageStart;
+      const tbody = document.querySelector('#tblFees tbody'); if (!tbody) return; tbody.innerHTML = '';
+
+      const thbh = inputs.thbh(), r21SA = inputs.r21SA(), r22SA = inputs.r22SA(), r23SA = inputs.r23SA();
+      const phu21 = inputs.phuR21(), gender = inputs.gender(), group = inputs.group();
+      let sumAll = 0;
+      let sumR21 = 0;
+      let sumR22 = 0;
+      let sumR23 = 0;
+
+      for (let i = 1; i <= thbh; i++) {
+        const attainedAge = ageStart + (i - 1);
+        const feeR21 = r21Rate(attainedAge, gender) * (r21SA / 1000) * (1 + phu21);
+        const feeR22 = r22AgeRate(attainedAge)* 0.51 * (r22SA / 1000) * r22GroupFactor(group);
+        const feeR23 = r23AgeRate(attainedAge) * (r23SA / 1000) * r23GroupFactor(group);
+        const total = feeR21 + feeR22 + feeR23; 
+        sumAll += total;
+        sumR21 += feeR21;
+        sumR22 += feeR22;
+        sumR23 += feeR23;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="text-align:left">Năm ${i}</td><td>${attainedAge}</td><td>${fmt(feeR21)}</td><td>${fmt(feeR22)}</td><td>${fmt(feeR23)}</td><td>${fmt(total)}</td>`;
+        tbody.appendChild(tr);
+      }
+      
+      const sumAllEl = el('sumAll'); if (sumAllEl) sumAllEl.textContent = fmt(sumAll);
+      const sumAllEl21 = el('sumR21'); if (sumAllEl21) sumAllEl21.textContent = fmt(sumR21);
+      const sumAllEl22 = el('sumR22'); if (sumAllEl22) sumAllEl22.textContent = fmt(sumR22);
+      const sumAllEl23 = el('sumR23'); if (sumAllEl23) sumAllEl23.textContent = fmt(sumR23);
+
+      const status = el('status');
+      if (status) {
+        status.textContent = `Đã tính cho ${thbh} năm • Tuổi bắt đầu: ${ageStart} • Tổng phí: ${fmt(sumAll)}`;
+        status.style.display = 'block';
+      }
+    }
+
+    const validateSTBH = (id, min, max, name) => {
+      const input = el(id);
+      input.addEventListener('change', () => {
+        const value = num(input.value);
+        let finalValue = value;
+
+        if (value < min || value > max) {
+          alert(`STBH ${name} phải nằm trong khoảng từ ${min}tr đến ${max}tr.`);
+          finalValue = Math.max(min, Math.min(value, max));
+        }
+
+        if (id !== 'txtSTBHSPC') {
+          const spcValue = inputs.spcSA();
+          if (finalValue > spcValue) {
+            alert(`STBH ${name} không được lớn hơn STBH Sản phẩm chính (${spcValue}tr).`);
+            finalValue = spcValue;
+          }
+        }
+        
+        input.value = finalValue;
+        buildTable();
+      });
+    };
+
+    const validateAllRiderSTBH = () => {
+      const spcValue = inputs.spcSA();
+      const r21 = el('txtSTBHR21');
+      const r22 = el('txtSTBHR22');
+      const r23 = el('txtSTBHR23');
+
+      if (num(r21.value) > spcValue) {
+        r21.value = spcValue;
+        alert(`STBH R21 đã được điều chỉnh bằng STBH Sản phẩm chính (${spcValue}tr) vì không được lớn hơn.`);
+      }
+      if (num(r22.value) > spcValue) {
+        r22.value = spcValue;
+        alert(`STBH R22 đã được điều chỉnh bằng STBH Sản phẩm chính (${spcValue}tr) vì không được lớn hơn.`);
+      }
+      if (num(r23.value) > spcValue) {
+        r23.value = spcValue;
+        alert(`STBH R23 đã được điều chỉnh bằng STBH Sản phẩm chính (${spcValue}tr) vì không được lớn hơn.`);
+      }
+      buildTable();
+    };
+
+    // PDF generation
+    const buttonPrint = document.getElementById("btnPrint");
+    function generatePDF() {
+      const element = document.getElementById("invoice");
+      const ten = document.getElementById("txtHoTen");
+      const options = {
+        filename: ten.value + '_R212223.pdf',
+        margin: [0.5, 0.5, 0.5, 0.5],
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'A4', orientation: 'portrait' },
+      };
+      html2pdf().set(options).from(element).save();
+      alert("Tạo file " + ten.value + '_R212223.pdf' + " thành công!");
+    }
+    buttonPrint.addEventListener("click", generatePDF);
+
+    // Event listeners
+    document.getElementById('btnCalc').addEventListener('click', buildTable);
+    document.getElementById('btnReset').addEventListener('click', () => {
+      ['txtSTBHR21','txtSTBHR22','txtSTBHR23'].forEach(id => { const n = el(id); if (n) n.value = '100'; });
+      el('txtPhutroiR21').value = '0';
+      el('txtThoihanBH').value = '5'; 
+      buildTable();
+    });
+
+    ['txtThoihanBH','txtPhutroiR21','cboGioiTinh','cboNhomNghe','txtNgaySinh','txtNgayBH']
+      .forEach(id => { 
+        const n = el(id); 
+        if (n) {
+          n.addEventListener('input', buildTable);
+          n.addEventListener('change', buildTable);
+        }
+      });
+      
+    // Custom validation for STBH fields
+    validateSTBH('txtSTBHSPC', 100, 25000, 'Sản phẩm chính'); 
+    validateSTBH('txtSTBHR21', 100, 5000, 'R21');
+    validateSTBH('txtSTBHR22', 100, 500, 'R22');
+    validateSTBH('txtSTBHR23', 100, 5000, 'R23');
+    
+    // Listener for main product STBH to validate riders
+    el('txtSTBHSPC').addEventListener('change', validateAllRiderSTBH);
+    el('txtSTBHSPC').addEventListener('input', validateAllRiderSTBH);
+
+    // Initial table build
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const todayFormatted = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+      el('txtNgayBH').value = todayFormatted;
+
+      const dobInput = el('txtNgaySinh');
+      if (dobInput.value === '1977-04-24') {
+        const defaultDob = new Date(today);
+        defaultDob.setFullYear(today.getFullYear() - 48);
+        const defaultDobFormatted = defaultDob.getFullYear() + '-' + ('0' + (defaultDob.getMonth() + 1)).slice(-2) + '-' + ('0' + defaultDob.getDate()).slice(-2);
+        dobInput.value = defaultDobFormatted;
+      }
+      
+      buildTable();
+    });
+  </script>
+</body>
+</html>
